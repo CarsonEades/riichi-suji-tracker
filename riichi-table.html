@@ -235,7 +235,7 @@ function seat(p,d,pos){
     else if(e.t==='c')items.push('<span class="chip cm">call</span>');
     else{on=!on;items.push(`<span class="chip tm">${on?'tenpai?':'cleared'}</span>`);}
   });
-  const pad=allTiles.map(t=>`<button class="t ${t[1]}" data-a="tile" data-p="${p}" data-t="${t}" aria-label="${NAMES[p]} discards ${t}">${d.cnt[t]?`<span class="n">${d.cnt[t]}</span>`:''}<b>${t==='5z'?'<span class="wd"></span>':lab(t).replace(/<i>.*<\/i>/,'')}</b><i>${t[1]==='z'?'':t[1]}</i></button>`).join('');
+  const pad=allTiles.map(t=>`<button class="t ${t[1]}" data-a="tile" data-p="${p}" data-t="${t}" aria-label="${NAMES[p]} discards ${t}"${(d.cnt[t]||0)>=4?' disabled title="All 4 copies discarded"':''}>${d.cnt[t]?`<span class="n">${d.cnt[t]}</span>`:''}<b>${t==='5z'?'<span class="wd"></span>':lab(t).replace(/<i>.*<\/i>/,'')}</b><i>${t[1]==='z'?'':t[1]}</i></button>`).join('');
   let grid,extra='';
   if(p===0){
     grid=gridHTML(combined(d),combinedPat(d));
@@ -264,7 +264,7 @@ document.addEventListener('click',e=>{
     if(!armed){armed=true;clearTimeout(tm);tm=setTimeout(()=>{armed=false;render();},3000);render();return;}
     armed=false;st={ev:[],sel:[0,0,0,0],opt:st.opt};
   }
-  else if(a==='tile')st.ev.push({t:'d',p,tile:b.dataset.t});
+  else if(a==='tile'){if((derive(st.ev).cnt[b.dataset.t]||0)>=4)return;st.ev.push({t:'d',p,tile:b.dataset.t});}
   else if(a==='riichi'){st.ev.push({t:'r',p,prev:st.sel[p]});st.sel[p]=true;}
   else if(a==='tp'){const was=derive(st.ev).tp[p];st.ev.push({t:'x',p,prev:st.sel[p]});st.sel[p]=!was;}
   else if(a==='call')st.ev.push({t:'c',p});
