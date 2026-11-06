@@ -41,6 +41,17 @@ button:hover:not(:disabled){filter:brightness(1.08)}
 .opts{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;font-size:12px;align-items:center}
 .opts label{white-space:nowrap}.opts .k{display:inline-block;font:700 9px/1 system-ui;padding:2px 3px;border-radius:3px;background:#d9304c;color:#fff;margin-right:3px}
 .opts .k.sf{background:#dff5e8;color:#145a32}
+.mk b.km,.k.km{background:#7048d8;color:#fff}.mk b.ka,.k.ka{background:#1c74d1;color:#fff}
+#guide{max-width:1100px;margin:18px auto 8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+#guide>h2{font-size:19px;margin:0 0 4px}#guide>p{margin:0 0 12px;opacity:.85}
+#guide .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+#guide article{background:var(--felt);border-radius:8px;padding:10px 12px}
+#guide h3{font:600 15px Georgia,serif;margin:0 0 6px;display:flex;align-items:center;gap:6px}
+#guide p{margin:0 0 6px}#guide p:last-child{margin-bottom:0}
+#guide .ex{font-size:13px;opacity:.85}
+#guide .k{display:inline-block;font:700 10px/1 system-ui;padding:3px 4px;border-radius:3px;background:#d9304c;color:#fff}
+#guide .k.sf{background:#dff5e8;color:#145a32}
+#guide .sw{display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--j)}
 .opts select{font:inherit;font-size:12px;border-radius:5px}
 .v3{background:var(--g);color:#06260f}.v2{background:var(--j);color:#2b2000}
 .v1{background:var(--h);color:#fff8de}.v0{background:var(--u);color:#7fa898}
@@ -51,6 +62,35 @@ button:hover:not(:disabled){filter:brightness(1.08)}
 .legend span:before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;background:var(--c)}
 </style></head><body>
 <div id="table"></div>
+<section id="guide">
+<h2>How the reads work</h2>
+<p>All of these are rules of thumb for guessing what a player is waiting on. Only genbutsu (a tile that player has already discarded, shown green) is truly safe against them. The rest just make a tile more or less likely to deal in.</p>
+<div class="cards">
+<article><h3><span class="sw"></span>Suji</h3>
+<p>Most riichi hands wait on a two-sided shape (ryanmen), such as 4-5 waiting on 3 or 6. A ryanmen wait always covers two tiles three apart, so the tiles in each suit fall into three lines: <b>1-4-7</b>, <b>2-5-8</b> and <b>3-6-9</b>.</p>
+<p>Furiten means a player can't win by ron on a tile they've discarded. So if they discarded 4, they can't be on a 1-4 or 4-7 ryanmen, and 1 and 7 become suji, safe against two-sided waits.</p>
+<p>The middle tiles 4, 5 and 6 sit on two waits each. A 5 is only full suji when both 2 and 8 have been discarded. With just one of them it's <b>half-suji</b> (dark gold).</p>
+<p class="ex">Suji still loses to closed (kanchan), edge (penchan), shanpon and single-tile (tanki) waits. Honor tiles have no suji.</p></article>
+<article><h3><span class="k">U</span>Ura suji</h3>
+<p>"Back suji". When a player cuts a tile from a shape like <b>5-7-8</b>, the 7-8 they keep waits on <b>6-9</b>. Cutting the 5 from <b>2-3-5</b> leaves 2-3 waiting on <b>1-4</b>. So a discarded X makes the X+1 / X+4 and X−4 / X−1 lines more dangerous, not less.</p>
+<p class="ex">Discard 5 → 1, 4, 6, 9. Discard 3 → 4, 7. Discard 7 → 3, 6. Discards of 1, 2, 8 and 9 are ignored, because those tiles are usually thrown as isolated tiles and say little about their neighbors.</p></article>
+<article><h3><span class="k km">M</span>Matagi suji</h3>
+<p>"Straddling suji": the waits that sit either side of the discarded tile. A player holding <b>4-5-5</b> can drop one 5 and keep the 4-5, waiting on <b>3-6</b>. From <b>5-5-6</b> they keep 5-6, waiting on <b>4-7</b>. Either way the tile they threw sits right inside their wait.</p>
+<p><b>Timing matters.</b> A matagi discard made <b>early</b> in the hand usually makes those tiles <b>safer</b>. Early on, a player tends to cut a middle tile because nothing is connected to it, which points away from that area. A matagi discard made <b>late</b> makes them <b>more dangerous</b>. Close to tenpai, a player cuts a tile from a shape they're finishing, and the riichi declaration tile is the riskiest of all.</p>
+<p class="ex">Discard 5 → 3, 4, 6, 7. Discard 3 → 1, 2, 4, 5. The badge doesn't track timing, so read it alongside the river, or set <b>U/M from</b> to "riichi tile" to see only the dangerous late case.</p></article>
+<article><h3><span class="k ka">A</span>Aida yon ken</h3>
+<p>"Four-gap". It's flagged when a player has discarded two tiles of the same suit five apart, such as <b>1 and 6</b>. The four tiles between them (2-3-4-5) hide a classic wait: holding 3-4 and cutting the 1 and 6 around it leaves a <b>2-5</b> ryanmen.</p>
+<p>It's dangerous because neither discard makes 2 or 5 suji, yet the two discards around them make those tiles feel "covered".</p>
+<p class="ex">1 + 6 → 2, 5. 2 + 7 → 3, 6. 3 + 8 → 4, 7. 4 + 9 → 5, 8.</p></article>
+<article><h3><span class="k sf">S</span>Sotogawa</h3>
+<p>"Outside" tiles: those further toward the edge of the suit than a tile the player discarded. A middle tile like 3 connects to more shapes than a 1 or 2. So a player who lets go of a 3 probably isn't building around 1-2-3, which makes the 1 and 2 a bit safer.</p>
+<p class="ex">Discard 3 → 1, 2. Discard 7 → 8, 9. Discard 6 → 7, 8, 9. A 5 gives no sotogawa. This is the weakest read here: it doesn't block a 2-3 waiting on 1-4, or shanpon and tanki waits.</p></article>
+<article><h3>Using the badges</h3>
+<p>Turn each read on or off in the middle panel. Red, purple and blue badges mark danger. The green <span class="k sf">S</span> marks a slightly safer tile. Badges never appear on genbutsu, and they don't change a tile's color.</p>
+<p>The <b>U/M from</b> setting picks which discards ura and matagi suji are read from: every discard, or only the riichi tile. The riichi tile carries the strongest signal, since it's the last tile they gave up to reach tenpai.</p>
+<p class="ex">On your own grid, a danger badge shows if any selected opponent has it. Sotogawa shows only if it holds against all of them.</p></article>
+</div>
+</section>
 <script>
 /* ===== LOGIC (pure) ===== */
 const NAMES=['You','Right','Across','Left'];
@@ -135,7 +175,7 @@ const allTiles=SUITS.flatMap(s=>Array.from({length:SIZE[s]},(_,i)=>(i+1)+s));
 const MKS=[['u','U','Ura suji'],['m','M','Matagi suji'],['a','A','Aida yon ken'],['s','S','Sotogawa']];
 function markHTML(o,v){
   if(v===3)return '';
-  const h=MKS.filter(([k])=>st.opt[k]&&o[k]).map(([k,c,nm])=>k==='s'?`<em title="${nm}">${c}</em>`:`<b title="${nm}">${c}</b>`).join('');
+  const h=MKS.filter(([k])=>st.opt[k]&&o[k]).map(([k,c,nm])=>k==='s'?`<em title="${nm}">${c}</em>`:`<b class="k${k}" title="${nm}">${c}</b>`).join('');
   return h?`<span class="mk">${h}</span>`:'';
 }
 function gridHTML(fn,pf){
@@ -169,7 +209,7 @@ function combinedPat(d){
   };
 }
 function optsHTML(){
-  const box=([k,c,nm])=>`<label><input type="checkbox" data-a="opt" data-k="${k}" ${st.opt[k]?'checked':''}><span class="k${k==='s'?' sf':''}">${c}</span>${nm}</label>`;
+  const box=([k,c,nm])=>`<label><input type="checkbox" data-a="opt" data-k="${k}" ${st.opt[k]?'checked':''}><span class="k ${k==='s'?'sf':'k'+k}">${c}</span>${nm}</label>`;
   return `<div class="opts">${MKS.map(box).join('')}
     <label>U/M from <select data-a="scope"><option value="r" ${st.opt.scope==='r'?'selected':''}>riichi tile</option><option value="all" ${st.opt.scope==='all'?'selected':''}>all discards</option></select></label></div>`;
 }
