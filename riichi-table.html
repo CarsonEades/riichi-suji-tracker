@@ -34,6 +34,14 @@ button:hover:not(:disabled){filter:brightness(1.08)}
 .chip.rm{background:#d9604c;color:#fff}.chip.cm{background:#c98a2b;color:#fff}.chip.tm{background:var(--u);color:var(--ivory);font-weight:400}
 .c{height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
 .c i{font-style:normal;font-size:9px;margin-left:1px;opacity:.7}
+.c{position:relative}
+.mk{position:absolute;top:-4px;right:-3px;display:flex;gap:1px;pointer-events:none}
+.mk b,.mk em{font:700 8px/1 system-ui,sans-serif;font-style:normal;padding:1px 2px;border-radius:3px}
+.mk b{background:#d9304c;color:#fff}.mk em{background:#dff5e8;color:#145a32}
+.opts{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;font-size:12px;align-items:center}
+.opts label{white-space:nowrap}.opts .k{display:inline-block;font:700 9px/1 system-ui;padding:2px 3px;border-radius:3px;background:#d9304c;color:#fff;margin-right:3px}
+.opts .k.sf{background:#dff5e8;color:#145a32}
+.opts select{font:inherit;font-size:12px;border-radius:5px}
 .v3{background:var(--g);color:#06260f}.v2{background:var(--j);color:#2b2000}
 .v1{background:var(--h);color:#fff8de}.v0{background:var(--u);color:#7fa898}
 .lt{opacity:.6;outline:2px dashed var(--ivory);outline-offset:-3px}
@@ -83,23 +91,60 @@ function lv(d,p,t){
   const b=safety(t,u,u);
   return b>a?[b,1]:[a,0];
 }
+// riichi declaration tile: first discard after the riichi marker, else the last one before it
+function riichiTile(ev,p){
+  let seen=false,before=null;
+  for(const e of ev){
+    if(e.p!==p)continue;
+    if(e.t==='r')seen=true;
+    else if(e.t==='d'){if(seen)return e.tile;before=e.tile;}
+  }
+  return seen?before:null;
+}
+// extra read patterns for tile t against seat p -> {u,m,a,s}
+// u = ura suji, m = matagi suji, a = aida yon ken (danger); s = sotogawa (safer)
+function patterns(ev,d,p,t,opt){
+  const o={u:0,m:0,a:0,s:0},n=+t[0],s=t[1];
+  if(s==='z')return o;
+  const mine=[...d.own[p]].filter(x=>x[1]===s).map(x=>+x[0]);
+  let src=mine;
+  if(opt.scope==='r'){const r=riichiTile(ev,p);src=r&&r[1]===s?[+r[0]]:[];}
+  const inLine=(a,b)=>a>=1&&b<=9&&(n===a||n===b);
+  src.forEach(x=>{
+    if(x>=3&&x<=7&&(inLine(x+1,x+4)||inLine(x-4,x-1)))o.u=1; // 1,2,8,9 discards don't generate ura suji
+    if(inLine(x-2,x+1)||inLine(x-1,x+2))o.m=1;
+  });
+  mine.forEach(x=>{
+    if(mine.includes(x+5)&&(n===x+1||n===x+4))o.a=1;
+    if((x<5&&n<x)||(x>5&&n>x))o.s=1;
+  });
+  return o;
+}
 /* ===== STATE ===== */
 const KEY='riichiTable.v2';
-let st={ev:[],sel:[0,0,0,0]};
+const OPT0={u:0,m:0,a:0,s:0,scope:'r'};
+let st={ev:[],sel:[0,0,0,0],opt:{...OPT0}};
 try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.ev)){st=x;if(!st.sel)st.sel=[0,0,0,0];}}catch(e){}
+st.opt={...OPT0,...(st.opt||{})};
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}};
 let armed=false,tm;
 /* ===== VIEW ===== */
 const lab=t=>t[1]==='z'?`<span class="h h${t[0]}">${HON[t[0]-1]}</span>`:`${t[0]}<i>${t[1]}</i>`;
 const chip=t=>`<span class="chip ${t[1]}">${t[1]==='z'?HON[t[0]-1]:t[0]+t[1]}</span>`;
 const allTiles=SUITS.flatMap(s=>Array.from({length:SIZE[s]},(_,i)=>(i+1)+s));
-function gridHTML(fn){
+const MKS=[['u','U','Ura suji'],['m','M','Matagi suji'],['a','A','Aida yon ken'],['s','S','Sotogawa']];
+function markHTML(o,v){
+  if(v===3)return '';
+  const h=MKS.filter(([k])=>st.opt[k]&&o[k]).map(([k,c,nm])=>k==='s'?`<em title="${nm}">${c}</em>`:`<b title="${nm}">${c}</b>`).join('');
+  return h?`<span class="mk">${h}</span>`:'';
+}
+function gridHTML(fn,pf){
   return '<div class="grid">'+SUITS.map(s=>{
     let h='';
     for(let n=1;n<=9;n++){
       if(n>SIZE[s]){h+='<div class="c blank"></div>';continue;}
       const t=n+s,[v,l]=fn(t);
-      h+=`<div class="c v${v}${l?' lt':''}">${lab(t)}</div>`;
+      h+=`<div class="c v${v}${l?' lt':''}">${lab(t)}${markHTML(pf(t),v)}</div>`;
     }
     return h;}).join('')+'</div>';
 }
@@ -110,6 +155,23 @@ function combined(d){
     const m=Math.min(...es.map(e=>e[0]));
     return [m,es.filter(e=>e[0]===m).some(e=>e[1])?1:0];
   };
+}
+// danger patterns: shown if any selected seat has them (ignoring seats where the tile is genbutsu)
+// sotogawa: shown only if every selected seat agrees
+function combinedPat(d){
+  return t=>{
+    const qs=[1,2,3].filter(q=>st.sel[q]),o={u:0,m:0,a:0,s:0};
+    if(!qs.length)return o;
+    const ps=qs.map(q=>[lv(d,q,t)[0],patterns(st.ev,d,q,t,st.opt)]);
+    ps.forEach(([v,x])=>{if(v<3)['u','m','a'].forEach(k=>{if(x[k])o[k]=1;});});
+    o.s=ps.every(([v,x])=>v===3||x.s)&&ps.some(([v,x])=>v<3)?1:0;
+    return o;
+  };
+}
+function optsHTML(){
+  const box=([k,c,nm])=>`<label><input type="checkbox" data-a="opt" data-k="${k}" ${st.opt[k]?'checked':''}><span class="k${k==='s'?' sf':''}">${c}</span>${nm}</label>`;
+  return `<div class="opts">${MKS.map(box).join('')}
+    <label>U/M from <select data-a="scope"><option value="r" ${st.opt.scope==='r'?'selected':''}>riichi tile</option><option value="all" ${st.opt.scope==='all'?'selected':''}>all discards</option></select></label></div>`;
 }
 function seat(p,d,pos){
   const k=d.R.findIndex(r=>r.p===p);
@@ -124,9 +186,9 @@ function seat(p,d,pos){
   const pad=allTiles.map(t=>`<button class="t ${t[1]}" data-a="tile" data-p="${p}" data-t="${t}" aria-label="${NAMES[p]} discards ${t}">${d.cnt[t]?`<span class="n">${d.cnt[t]}</span>`:''}<b>${t==='5z'?'<span class="wd"></span>':lab(t).replace(/<i>.*<\/i>/,'')}</b><i>${t[1]==='z'?'':t[1]}</i></button>`).join('');
   let grid,extra='';
   if(p===0){
-    grid=gridHTML(combined(d));
+    grid=gridHTML(combined(d),combinedPat(d));
     extra='<div class="sel">Safest against: '+[3,2,1].map(q=>`<label><input type="checkbox" data-a="sel" data-p="${q}" ${st.sel[q]?'checked':''}> ${NAMES[q]}</label>`).join('')+'</div>';
-  }else grid=gridHTML(t=>lv(d,p,t));
+  }else grid=gridHTML(t=>lv(d,p,t),t=>patterns(st.ev,d,p,t,st.opt));
   return `<section class="seat a-${pos}"><div class="hd"><h2>${NAMES[p]}</h2>
     ${p?`<button class="tg ${d.tp[p]?'on':''}" data-a="tp" data-p="${p}" ${k>=0?'hidden':''}>Tenpai?</button>`:''}
     <button class="cl" data-a="call" data-p="${p}">Call</button>
@@ -138,7 +200,7 @@ function render(){
   document.getElementById('table').innerHTML=
     seat(2,d,'top')+seat(3,d,'left')+seat(1,d,'right')+seat(0,d,'bottom')+
     `<section class="mid a-mid"><h1>Riichi table</h1><div class="row"><button id="undo">Undo</button><button id="reset" class="danger">${armed?'Tap again to reset':'Reset'}</button></div>
-    <div class="legend"><span style="--c:var(--g)">Safe (discarded)</span><span style="--c:var(--j)">Suji</span><span style="--c:var(--h)">Half-suji</span><span style="--c:var(--u)">No info</span><span style="--c:var(--ivory)">Pale dashed = probably (passed during suspected tenpai)</span></div></section>`;
+    <div class="legend"><span style="--c:var(--g)">Safe (discarded)</span><span style="--c:var(--j)">Suji</span><span style="--c:var(--h)">Half-suji</span><span style="--c:var(--u)">No info</span><span style="--c:var(--ivory)">Pale dashed = probably (passed during suspected tenpai)</span></div>${optsHTML()}</section>`;
 }
 /* ===== ACTIONS ===== */
 document.addEventListener('click',e=>{
@@ -148,7 +210,7 @@ document.addEventListener('click',e=>{
   if(b.id==='undo'){const x=st.ev.pop();if(x&&x.prev!==undefined)st.sel[x.p]=x.prev;}
   else if(b.id==='reset'){
     if(!armed){armed=true;clearTimeout(tm);tm=setTimeout(()=>{armed=false;render();},3000);render();return;}
-    armed=false;st={ev:[],sel:[0,0,0,0]};
+    armed=false;st={ev:[],sel:[0,0,0,0],opt:st.opt};
   }
   else if(a==='tile')st.ev.push({t:'d',p,tile:b.dataset.t});
   else if(a==='riichi'){st.ev.push({t:'r',p,prev:st.sel[p]});st.sel[p]=true;}
@@ -160,6 +222,8 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const i=e.target;
   if(i.dataset.a==='sel'){st.sel[+i.dataset.p]=i.checked;save();render();}
+  else if(i.dataset.a==='opt'){st.opt[i.dataset.k]=i.checked?1:0;save();render();}
+  else if(i.dataset.a==='scope'){st.opt.scope=i.value;save();render();}
 });
 render();
 </script></body></html>
