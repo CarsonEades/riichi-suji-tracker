@@ -52,6 +52,7 @@ button:hover:not(:disabled){filter:brightness(1.08)}
 #guide .k{display:inline-block;font:700 10px/1 system-ui;padding:3px 4px;border-radius:3px;background:#d9304c;color:#fff}
 #guide .k.sf{background:#dff5e8;color:#145a32}
 #guide .k.km{background:#7048d8}#guide .k.ka{background:#1c74d1}
+.mk em.kk,.opts .k.kk,#guide .k.kk{background:#c9c3b5;color:#2a2620}
 #guide .sw{display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--j)}
 .opts select{font:inherit;font-size:12px;border-radius:5px}
 .v3{background:var(--g);color:#06260f}.v2{background:var(--j);color:#2b2000}
@@ -73,7 +74,8 @@ button:hover:not(:disabled){filter:brightness(1.08)}
 <p>The middle tiles 4, 5 and 6 sit on two waits each. A 5 is only full suji when both 2 and 8 have been discarded. With just one of them it's <b>half-suji</b> (dark gold).</p>
 <p class="ex">Suji still loses to closed (kanchan), edge (penchan), shanpon and single-tile (tanki) waits. Honor tiles have no suji.</p></article>
 <article><h3><span class="k">U</span>Ura suji</h3>
-<p>"Back suji". When a player cuts a tile from a shape like <b>5-7-8</b>, the 7-8 they keep waits on <b>6-9</b>. Cutting the 5 from <b>2-3-5</b> leaves 2-3 waiting on <b>1-4</b>. So a discarded X makes the X+1 / X+4 and X−4 / X−1 lines more dangerous, not less.</p>
+<p>"Back suji". Ura suji mostly comes from a <b>kanchan (closed wait) that gets upgraded to a ryanmen</b>. Say a player holds the 5-7 kanchan, waiting on 6. They draw an 8, keep the better 7-8 and discard the 5, and now they're waiting on <b>6-9</b>. The same thing happens the other way: 3-5 plus a drawn 2 becomes 2-3, the 5 goes, and the wait is <b>1-4</b>.</p>
+<p>So a discarded X makes the X+1 / X+4 and X−4 / X−1 lines more dangerous, not less.</p>
 <p class="ex">Discard 5 → 1, 4, 6, 9. Discard 3 → 4, 7. Discard 7 → 3, 6. Discards of 1, 2, 8 and 9 are ignored, because those tiles are usually thrown as isolated tiles and say little about their neighbors.</p></article>
 <article><h3><span class="k km">M</span>Matagi suji</h3>
 <p>"Straddling suji": the waits that sit either side of the discarded tile. A player holding <b>4-5-5</b> can drop one 5 and keep the 4-5, waiting on <b>3-6</b>. From <b>5-5-6</b> they keep 5-6, waiting on <b>4-7</b>. Either way the tile they threw sits right inside their wait.</p>
@@ -86,10 +88,14 @@ button:hover:not(:disabled){filter:brightness(1.08)}
 <article><h3><span class="k sf">S</span>Sotogawa</h3>
 <p>"Outside" tiles: those further toward the edge of the suit than a tile the player discarded. A middle tile like 3 connects to more shapes than a 1 or 2. So a player who lets go of a 3 probably isn't building around 1-2-3, which makes the 1 and 2 a bit safer.</p>
 <p class="ex">Discard 3 → 1, 2. Discard 7 → 8, 9. Discard 6 → 7, 8, 9. A 5 gives no sotogawa. This is the weakest read here: it doesn't block a 2-3 waiting on 1-4, or shanpon and tanki waits.</p></article>
+<article><h3><span class="k kk">K</span>Kabe</h3>
+<p>"Wall". When all four copies of a tile are visible, nobody can hold that tile, so no one can have a ryanmen shape that uses it. If all four 7s are out, no one can be waiting on 6-9 with 7-8 or on 5-8 with 6-7. That makes the tiles beyond the wall safer.</p>
+<p>A tile gets <b>K</b> when every two-sided shape that could win on it is blocked by a wall. Edge tiles only need one wall: a 7 wall covers 8 and 9, and a 3 wall covers 1 and 2. Middle tiles need a wall on each side: 5 is covered when (3 or 4) and (6 or 7) are both walled.</p>
+<p class="ex">This is called "no chance". With three copies out ("one chance") a ryanmen is unlikely but still possible, and that isn't marked. Kabe protects against ryanmen waits only, not tanki, shanpon or kanchan. The tracker only counts discards, so tiles in your hand or in other players' calls don't add to a wall, and some real walls won't be marked.</p></article>
 <article><h3>Using the badges</h3>
-<p>Turn each read on or off in the middle panel. Red, purple and blue badges mark danger. The green <span class="k sf">S</span> marks a slightly safer tile. Badges never appear on genbutsu, and they don't change a tile's color.</p>
+<p>Turn each read on or off in the middle panel. Red, purple and blue badges mark danger. The green <span class="k sf">S</span> and gray <span class="k kk">K</span> mark safer tiles. Badges never appear on genbutsu, and they don't change a tile's color.</p>
 <p>The <b>U/M from</b> setting picks which discards ura and matagi suji are read from: every discard, or only the riichi tile. The riichi tile carries the strongest signal, since it's the last tile they gave up to reach tenpai.</p>
-<p class="ex">On your own grid, a danger badge shows if any selected opponent has it. Sotogawa shows only if it holds against all of them.</p></article>
+<p class="ex">On your own grid, a danger badge shows if any selected opponent has it. Sotogawa and kabe show only if they hold against all of them.</p></article>
 </div>
 </section>
 <script>
@@ -159,11 +165,15 @@ function patterns(ev,d,p,t,opt){
     if(mine.includes(x+5)&&(n===x+1||n===x+4))o.a=1;
     if((x<5&&n<x)||(x>5&&n>x))o.s=1;
   });
+  // kabe: every ryanmen shape that could win on n uses a tile with all 4 copies visible
+  const wall=k=>(d.cnt[k+s]||0)>=4;
+  const shapes=[[n+1,n+2],[n-2,n-1]].filter(([a,b])=>a>=1&&b<=9);
+  o.k=shapes.length&&shapes.every(([a,b])=>wall(a)||wall(b))?1:0;
   return o;
 }
 /* ===== STATE ===== */
 const KEY='riichiTable.v2';
-const OPT0={u:0,m:0,a:0,s:0,scope:'all'};
+const OPT0={u:0,m:0,a:0,s:0,k:0,scope:'all'};
 let st={ev:[],sel:[0,0,0,0],opt:{...OPT0}};
 try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.ev)){st=x;if(!st.sel)st.sel=[0,0,0,0];}}catch(e){}
 st.opt={...OPT0,...(st.opt||{})};
@@ -173,10 +183,11 @@ let armed=false,tm;
 const lab=t=>t[1]==='z'?`<span class="h h${t[0]}">${HON[t[0]-1]}</span>`:`${t[0]}<i>${t[1]}</i>`;
 const chip=t=>`<span class="chip ${t[1]}">${t[1]==='z'?HON[t[0]-1]:t[0]+t[1]}</span>`;
 const allTiles=SUITS.flatMap(s=>Array.from({length:SIZE[s]},(_,i)=>(i+1)+s));
-const MKS=[['u','U','Ura suji'],['m','M','Matagi suji'],['a','A','Aida yon ken'],['s','S','Sotogawa']];
+const MKS=[['u','U','Ura suji'],['m','M','Matagi suji'],['a','A','Aida yon ken'],['s','S','Sotogawa'],['k','K','Kabe']];
+const SAFE=k=>k==='s'||k==='k';
 function markHTML(o,v){
   if(v===3)return '';
-  const h=MKS.filter(([k])=>st.opt[k]&&o[k]).map(([k,c,nm])=>k==='s'?`<em title="${nm}">${c}</em>`:`<b class="k${k}" title="${nm}">${c}</b>`).join('');
+  const h=MKS.filter(([k])=>st.opt[k]&&o[k]).map(([k,c,nm])=>SAFE(k)?`<em class="k${k}" title="${nm}">${c}</em>`:`<b class="k${k}" title="${nm}">${c}</b>`).join('');
   return h?`<span class="mk">${h}</span>`:'';
 }
 function gridHTML(fn,pf){
@@ -201,11 +212,11 @@ function combined(d){
 // sotogawa: shown only if every selected seat agrees
 function combinedPat(d){
   return t=>{
-    const qs=[1,2,3].filter(q=>st.sel[q]),o={u:0,m:0,a:0,s:0};
+    const qs=[1,2,3].filter(q=>st.sel[q]),o={u:0,m:0,a:0,s:0,k:0};
     if(!qs.length)return o;
     const ps=qs.map(q=>[lv(d,q,t)[0],patterns(st.ev,d,q,t,st.opt)]);
     ps.forEach(([v,x])=>{if(v<3)['u','m','a'].forEach(k=>{if(x[k])o[k]=1;});});
-    o.s=ps.every(([v,x])=>v===3||x.s)&&ps.some(([v,x])=>v<3)?1:0;
+    ['s','k'].forEach(k=>{o[k]=ps.every(([v,x])=>v===3||x[k])&&ps.some(([v,x])=>v<3)?1:0;});
     return o;
   };
 }
